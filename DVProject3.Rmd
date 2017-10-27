@@ -53,7 +53,7 @@ Pantheon is an ambitious project from MIT Media Lab trying to help us understand
 In this project, we will combine this dataset with the US Census Bureau's 2015 census and build on our [previous analysis](https://jaredallmaras.shinyapps.io/PantheonProject/) in an attempt to make new insights.
 
 
-## Getting Reaquainted With The Data
+## Getting Reacquainted With The Data
 Comparing the mean HPI to the median HPI for the top 5 HPI countries by median
 ```{r }
 # get the countries with the highest median
