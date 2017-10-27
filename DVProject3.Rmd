@@ -1,0 +1,89 @@
+---
+title: 'Pantheon and The 2015 Census'
+author:
+- Joshua Levine
+- Sebastian Whitworth
+- Jared (the squid) Allmaras
+runtime: shiny
+output:
+  html_document:
+    theme: journal
+    highlight: tango
+    df_print: paged
+    toc: yes
+    toc_depth: '4'
+  html_notebook:
+    code_folding: hide
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+require(data.world)
+library(shiny)
+library(ggthemes)
+knitr::opts_chunk$set(echo = TRUE)
+```
+  
+## **R Session Info**  
+
+```{r}
+sessionInfo()
+```
+
+## **Github Link** 
+https://github.com/stw436/testGit
+
+## **Querying our data.world project** 
+```{r}
+project <- "https://data.world/stw436/f-17-edv-project-3"
+data.world::set_config(cfg_env("DW_API"))
+hpiByCountry <- data.world::query(data.world::qry_sql(
+"SELECT UPPER(countryname) as countryName, hpi, continentname
+FROM stw436.`pantheon-prj-4`.pantheon
+WHERE continentname IS NOT NULL"
+), dataset = project)
+```
+
+## **Introduction** 
+Pantheon is an ambitious project from MIT Media Lab trying to help us understand the process of global cultural development. Simply, it is a dataset of famous people throughout history. It lists things like name, birthcity, occupation, domain, etc. But, the lynchpin here is the Human Popularity (hpi) which attempts to put a number on a persons "measure of cultural popularity." If you'd like to read about how they do that, [check this out](http://pantheon.media.mit.edu/methods)
+
+In this project, we will combine this dataset with the US Census Bureau's 2015 census and build on our [previous analysis](https://jaredallmaras.shinyapps.io/PantheonProject/) in an attempt to make new insights.
+
+
+## Getting Reaquainted With The Data
+Comparing the mean HPI to the median HPI for the top 5 HPI countries by median
+```{r }
+# get the countries with the highest median
+medianCountryHpi <- hpiByCountry %>% group_by(countryName) %>% mutate(Median = median(hpi))
+
+countriesOrderedByMedian <- unique(medianCountryHpi$countryName [order (medianCountryHpi$Median, decreasing = TRUE)])[1 : 5]
+
+topMedianCountry = subset (medianCountryHpi, countryName %in% countriesOrderedByMedian) 
+topMedianCountry  = topMedianCountry[!duplicated(topMedianCountry['countryName']),]
+
+# get the countries with the highest mean
+meanCountryHpi <- hpiByCountry %>% group_by(countryName) %>% mutate(Mean = mean(hpi))
+
+countriesOrderedByMean <- unique(meanCountryHpi$countryName [order (meanCountryHpi$Mean, decreasing = TRUE)])
+
+topMeanCountryHpi <- subset (meanCountryHpi, countryName %in% countriesOrderedByMedian)
+topMeanCountryHpi =
+topMeanCountryHpi[!duplicated(topMeanCountryHpi['countryName']),]
+
+# union topMeanCountryHpi and topMedianCountry
+meanWithMedian = rbind(topMeanCountryHpi, topMedianCountry)
+gatheredCombo = subset (gather(meanWithMedian, type, value, Mean:Median), value != "NA")
+
+renderPlot({
+  ggplot(gatheredCombo, 
+       aes(x=countryName,
+           y=value,
+           color=type,
+           shape=type)) + 
+  geom_point(size = 10) + labs(x = "Country") +
+  theme_wsj()
+})
+```
